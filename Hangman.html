@@ -1,0 +1,316 @@
+<html>
+
+<head>
+<title>Hangman</title>
+
+
+<script type="text/javascript" src="http://d14to6y4nub5k1.cloudfront.net/local/jquery.min.js"></script>
+<script type="text/javascript" src="http://d14to6y4nub5k1.cloudfront.net/lib/codehs/library_live.js"></script>
+
+
+<style>
+canvas{
+    border: 1px solid black;
+}
+</style>
+
+</head>
+
+<body>
+<h1>Hangman</h1>
+
+<div id="user-code" style="display:none;">
+
+var words = ["dog","bird","cat","wolf","lion","bear","tiger","kangaroo","rabbit","duck",
+            "geography", "cat", "yesterday", "germs", "truck", "opportunity",
+            "fish", "token", "transportation", "bottom", "apple", "cake",
+            "remote", "boots", "terminology", "arm", "cranberry", "tool",
+            "caterpillar", "spoon", "watermelon", "laptop", "toe", "toad",
+            "fundamental", "capitol", "garbage", "anticipate", "pesky","acres","adult",
+			"advice","arrangement","attempt","autumn","border","breeze","brick",
+			"calm","canal","casey",	"cast","chose","claws","coach","constantly","contrast",
+			"cookies","customs","damage","danny","deeply","depth","discussion","doll","donkey",
+			"egypt","ellen","essential","exchange","exist","explanation","facing","film",
+			"finest","fireplace","floating","folks","fort","garage","grabbed","grandmother",
+			"habit","happily","harry","heading","hunter","illinois","image","independent",
+			"instant","january","kids","label","lee","lungs","manufacturing","martin","mathematics",
+			"melted","memory","mill","mission","monkey","mount","mysterious","neighborhood","norway",
+			"nuts","occasionally","official","ourselves","palace","pennsylvania","philadelphia",
+			"plates","poetry","policeman","positive","possibly","practical","pride","promised",
+			"recall","relationship","remarkable","require","rhyme","rocky","rubbed","rush","sale",
+			"satellites","satisfied","scared","selection","shake","shaking","shallow","shout","silly",
+			"simplest","slight","slip","slope","soap","solar","species","spin","stiff","swung","tales",
+			"thumb","tobacco","toy","trap","treated","tune","university","vapor","vessels","wealth",
+			"wolf","zoo"];
+var word = [];
+var wrong = 0;
+var count = 0;
+var alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n',
+                    'o','p','q','r','s','t','u','v','w','x','y','z'];
+var letters = [];
+
+var HEAD_RADIUS = 15;
+var BODY_LENGTH = 40;
+var ARM_LENGTH = 20;
+var LEG_DOWN = 30;
+var LEG_SIDE = 10;
+var EYE_LENGTH = 5;
+var EYE_OFFSET_SIDE = 3;
+var EYE_OFFSET_UP = 6;
+var MOUTH_LENGTH = 15;
+var MOUTH_OFFSET = 5;
+
+
+function start(){
+    setUp();
+	getWord();
+	mouseMoveMethod(hover);
+    mouseClickMethod(select);
+}   
+
+function select(e){
+    var element = getElementAt(e.getX(), e.getY());
+    
+    if(element == null){
+        return;
+    }
+    
+    var correct = false;
+    
+    if(element.getY() >= getHeight()/4 * 3){
+        var letter = element.getText();
+        
+        for(var i = 0; i < word.length; i++){
+            if(word[i] == letter){
+                
+                correct = true;
+                
+                var x = getWidth()/2 - (30*word.length/2) + i*30 + 3;
+                var y = getHeight()/3 * 2 - 3;
+                
+                if(letter == "m"){
+                    x-=5;
+                }
+                
+                drawText(letter, Color.BLUE, x, y);
+                
+                count++;
+            }
+        }
+        
+		remove(element);
+        
+		
+        if(correct == false){
+            wrong++;
+            drawHangman();
+        }else{
+			checkWin();
+		}
+          
+        
+    }
+   
+    
+}
+
+function drawHangman(){
+    if(wrong == 1){
+        drawCircle(HEAD_RADIUS, getWidth()/2+20, 70 + HEAD_RADIUS);
+        drawColorCircle(HEAD_RADIUS-1.5, Color.WHITE, getWidth()/2+20, 70 + HEAD_RADIUS);
+    }else if(wrong == 2){
+        drawLine(getWidth()/2+20, 70 + HEAD_RADIUS*2  ,getWidth()/2+20, 
+            70 + HEAD_RADIUS*2 + BODY_LENGTH);
+    }else if(wrong == 3){
+        //right arm
+        drawLine(getWidth()/2+20, 70 + HEAD_RADIUS*2 + BODY_LENGTH/3 , 
+            getWidth()/2+20 + ARM_LENGTH, 70 + HEAD_RADIUS*2 + BODY_LENGTH/3 - 3);
+    }else if(wrong == 4){
+        //left arm
+        drawLine(getWidth()/2+20, 70 + HEAD_RADIUS*2 + BODY_LENGTH/3 , 
+            getWidth()/2+20 - ARM_LENGTH, 70 + HEAD_RADIUS*2 + BODY_LENGTH/3 - 3);
+        
+    }else if(wrong == 5){
+        //right leg
+        drawLine(getWidth()/2+20, 70 + HEAD_RADIUS*2 + BODY_LENGTH, 
+            getWidth()/2+20 + LEG_SIDE, 70 + HEAD_RADIUS*2 + BODY_LENGTH + LEG_DOWN);
+    }else if(wrong == 6){
+        //left leg
+        drawLine(getWidth()/2+20, 70 + HEAD_RADIUS*2 + BODY_LENGTH, 
+            getWidth()/2+20 - LEG_SIDE, 70 + HEAD_RADIUS*2 + BODY_LENGTH + LEG_DOWN);
+    }else if(wrong == 7){
+        //lose
+        lose();
+    }
+}
+
+function checkWin(){
+    if(word.length == count){
+		var text = new Text("YOU WIN");
+		text.setColor(Color.RED);
+		text.setPosition(getWidth()/2 - text.getWidth()/2, 250);
+		add(text);
+	}
+}
+
+function lose(){
+    var text = new Text("YOU LOSE");
+    text.setColor(Color.RED);
+    text.setPosition(getWidth()/2 - text.getWidth()/2, 250);
+    add(text);
+    
+    
+    drawLine(getWidth()/2+20 + EYE_OFFSET_SIDE, 70 + HEAD_RADIUS - EYE_OFFSET_UP, 
+             getWidth()/2+20 + EYE_OFFSET_SIDE + EYE_LENGTH,
+             70 + HEAD_RADIUS - EYE_OFFSET_UP + EYE_LENGTH);
+             
+    drawLine(getWidth()/2+20 + EYE_OFFSET_SIDE, 70 + HEAD_RADIUS - EYE_OFFSET_UP + EYE_LENGTH, 
+             getWidth()/2+20 + EYE_OFFSET_SIDE + EYE_LENGTH,
+             70 + HEAD_RADIUS - EYE_OFFSET_UP);
+             
+    
+    drawLine(getWidth()/2+20 - EYE_OFFSET_SIDE, 70 + HEAD_RADIUS - EYE_OFFSET_UP, 
+             getWidth()/2+20 - EYE_OFFSET_SIDE - EYE_LENGTH,
+             70 + HEAD_RADIUS - EYE_OFFSET_UP + EYE_LENGTH);
+             
+    drawLine(getWidth()/2+20 - EYE_OFFSET_SIDE, 70 + HEAD_RADIUS - EYE_OFFSET_UP + EYE_LENGTH, 
+             getWidth()/2+20 - EYE_OFFSET_SIDE - EYE_LENGTH,
+             70 + HEAD_RADIUS - EYE_OFFSET_UP);  
+             
+   
+    drawLine(getWidth()/2+20 - MOUTH_LENGTH/2, 70 + HEAD_RADIUS + MOUTH_OFFSET, 
+             getWidth()/2+20 + MOUTH_LENGTH/2, 70 + HEAD_RADIUS + MOUTH_OFFSET);
+    
+}
+
+function hover(e){
+    
+    if(e.getY() < getHeight()/4 * 3){
+        return;
+    }    
+    
+    var element = getElementAt(e.getX(), e.getY());
+    
+    if(element != null && element.getType() == 'Text' && element){
+        element.setColor(Color.RED);
+    }else{
+        for(var i = 0; i<26; i++){
+            letters[i].setColor(Color.BLUE);
+        }
+    }
+}
+
+function setUp(){
+    nooseSetup();
+    makeLetters();
+}
+
+function makeLetters(){
+                     
+    for(var i = 0; i<26; i++){
+        var x = 15 + (getWidth()/10 * (i%10));
+        var y = (getHeight()/4 * 3);
+        
+        if(alphabet[i] == 'm'){
+            x-=5;
+        }
+        
+        if(i<10){
+            y += 35; 
+        }else if(i>=10 && i<20){
+            y += 70;
+        }else{
+            y += 105;
+            x += getWidth()/10 * 2;
+        }
+        
+        drawText(alphabet[i], Color.BLUE, x, y);
+    }
+}
+
+function nooseSetup(){
+    drawLine(getWidth()/2-20, 50, getWidth()/2-20, 200);   
+    drawLine(getWidth()/2-50, 200, getWidth()/2+35, 200);  
+    drawLine(getWidth()/2-20, 50, getWidth()/2+20, 50);    
+    drawLine(getWidth()/2+20, 50, getWidth()/2+20, 70);   
+}
+
+function getWord(){
+    
+    var w = words[Randomizer.nextInt(0,words.length-1)];
+    
+	
+	
+	for(var i = 0; i < w.length; i++){
+        
+        word.push(w.charAt(i));
+    }
+    
+   
+    
+    for(var i = 0; i < word.length; i++){
+        
+        var x = getWidth()/2 - (30*word.length/2) + i*30;
+        
+        drawLine(x, getHeight()/3 * 2, x+20, getHeight()/3 * 2);
+    }
+    
+   
+    
+    
+    
+
+
+    
+    
+    
+}
+
+
+
+function drawLine(x, y, x2, y2){
+    var line = new Line(x,y,x2,y2);
+    add(line);
+    
+}
+
+function drawText(text, color, x, y){
+    var txt = new Text(text);
+    txt.setColor(color);
+    txt.setPosition(x,y);
+    add(txt);
+    letters.push(txt);
+}
+
+function drawColorCircle(radius, color, x, y){
+    var circle = new Circle(radius);
+    circle.setPosition(x,y);
+    circle.setColor(color);
+    add(circle);
+}
+
+function drawCircle(radius, x, y){
+    var circle = new Circle(radius);
+    circle.setPosition(x,y);
+    add(circle);
+}
+
+
+</div>
+
+<canvas 
+width="500"
+height="600"
+class="codehs-editor-canvas"></canvas>
+
+<script>
+var g = new CodeHSGraphics({
+    canvas: $('.codehs-editor-canvas')
+});
+// run test # here.
+g.runCode($("#user-code").text());
+
+</script>
+
+</body>
+</html>
